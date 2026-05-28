@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>협업 스케줄 & 성과 — 크리에이터 라운지</title>
+  <style>
+    :root {
+      --primary: #5B4FE8;
+      --primary-light: #EEF0FF;
+      --gray-50: #F9FAFB;
+      --gray-100: #F3F4F6;
+      --gray-200: #E5E7EB;
+      --gray-400: #9CA3AF;
+      --gray-600: #4B5563;
+      --gray-800: #1F2937;
+      --white: #ffffff;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08);
+      --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+      background: var(--gray-50);
+      color: var(--gray-800);
+      font-size: 14px;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-200);
+      padding: 12px 24px;
+      position: sticky; top: 0; z-index: 200;
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    }
+    .header-title { font-size: 16px; font-weight: 700; }
+    .today-badge {
+      font-size: 11px; color: var(--gray-600);
+      border: 1px solid var(--gray-200); border-radius: 6px;
+      padding: 3px 8px; white-space: nowrap;
+    }
+    .month-nav { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+    .month-label { font-size: 15px; font-weight: 700; min-width: 110px; text-align: center; }
+    .btn-nav {
+      width: 28px; height: 28px;
+      background: var(--gray-100); border: 1px solid var(--gray-200);
+      border-radius: 6px; cursor: pointer; font-size: 14px; line-height: 1;
+    }
+    .btn-nav:hover { background: var(--gray-200); }
+    .btn {
+      height: 30px; padding: 0 12px;
+      border: 1px solid transparent; border-radius: 8px;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 5px;
+      transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-secondary { background: var(--gray-100); color: var(--gray-600); border-color: var(--gray-200); }
+    .sync-info { font-size: 11px; color: var(--gray-400); }
+
+    /* ── Main layout ── */
+    .main { max-width: 1600px; margin: 0 auto; padding: 20px 24px; }
+
+    /* ── Section ── */
+    .section { margin-bottom: 24px; }
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .section-title { font-size: 14px; font-weight: 700; }
+    .section-sub { font-size: 11px; color: var(--gray-400); }
+
+    /* ── Performance cards ── */
+    .perf-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+    }
+    .perf-card {
+      background: var(--white);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      padding: 16px;
+      border-left: 4px solid var(--primary);
+    }
+    .perf-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+    .perf-name { font-size: 13px; font-weight: 700; line-height: 1.4; }
+    .perf-period { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+    .perf-roas {
+      flex-shrink: 0; margin-left: 8px;
+      padding: 2px 8px; border-radius: 20px;
+      font-size: 12px; font-weight: 700;
+    }
+    .roas-high { background: #DCFCE7; color: #15803D; }
+    .roas-mid { background: #FEF3C7; color: #B45309; }
+    .roas-low { background: #FEE2E2; color: #DC2626; }
+    .perf-progress { height: 4px; background: var(--gray-100); border-radius: 2px; margin-bottom: 12px; overflow: hidden; }
+    .perf-bar { height: 100%; border-radius: 2px; transition: width 0.4s; }
+    .perf-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .metric { background: var(--gray-50); border-radius: 8px; padding: 8px 10px; }
+    .metric-label { font-size: 10px; color: var(--gray-400); font-weight: 600; text-transform: uppercase; margin-bottom: 3px; }
+    .metric-yd { font-size: 13px; font-weight: 700; }
+    .metric-total { font-size: 10px; color: var(--gray-400); margin-top: 1px; }
+
+    /* ── Gantt ── */
+    .gantt-card { background: var(--white); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
+    .gantt-legend { display: flex; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--gray-100); flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--gray-600); }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    .gantt-header { display: flex; border-bottom: 2px solid var(--gray-200); background: var(--gray-50); }
+    .gantt-label-col { min-width: 190px; width: 190px; padding: 8px 12px; font-size: 11px; font-weight: 700; color: var(--gray-600); border-right: 1px solid var(--gray-200); flex-shrink: 0; }
+    .gantt-days-row { flex: 1; display: flex; }
+    .gantt-day {
+      flex: 1; padding: 5px 0; text-align: center;
+      font-size: 10px; font-weight: 600; color: var(--gray-400);
+      border-right: 1px solid var(--gray-100);
+    }
+    .gantt-day.is-today { color: #EF4444; font-weight: 900; }
+    .gantt-day.is-weekend { background: rgba(0,0,0,0.015); }
+    .gantt-day.is-mon { border-left: 1px solid var(--gray-200); }
+
+    .gantt-rows { max-height: 420px; overflow-y: auto; }
+    .gantt-row { display: flex; border-bottom: 1px solid var(--gray-100); min-height: 32px; }
+    .gantt-row:last-child { border-bottom: none; }
+    .gantt-row:hover .gantt-row-label, .gantt-row:hover .gantt-track { background: var(--gray-50); }
+    .gantt-row-label {
+      min-width: 190px; width: 190px; padding: 5px 10px;
+      border-right: 1px solid var(--gray-200); flex-shrink: 0;
+      display: flex; align-items: center; gap: 6px; overflow: hidden;
+    }
+    .dept-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .row-name { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .gantt-track { flex: 1; position: relative; min-height: 32px; }
+    .gantt-bar {
+      position: absolute; top: 7px; height: 18px;
+      border-radius: 4px; cursor: pointer;
+      display: flex; align-items: center; padding: 0 6px;
+      font-size: 10px; font-weight: 600; color: white;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      transition: filter 0.15s;
+    }
+    .gantt-bar:hover { filter: brightness(0.88); }
+    .gantt-bar.starts-before { border-radius: 0 4px 4px 0; }
+    .gantt-bar.ends-after { border-radius: 4px 0 0 4px; }
+    .gantt-bar.starts-before.ends-after { border-radius: 0; }
+    .gantt-today-line {
+      position: absolute; top: 0; bottom: 0; width: 2px;
+      background: rgba(239,68,68,0.5); pointer-events: none; z-index: 5;
+    }
+    .gantt-weekend-col {
+      position: absolute; top: 0; bottom: 0;
+      background: rgba(0,0,0,0.02); pointer-events: none;
+    }
+
+    /* ── Filter tabs ── */
+    .filter-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+    .tab-btn {
+      padding: 5px 12px; border-radius: 20px;
+      border: 1.5px solid var(--gray-200);
+      background: var(--white); color: var(--gray-600);
+      font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s;
+    }
+    .tab-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .tab-btn.active { background: var(--primary); border-color: var(--primary); color: white; }
+    .search-input {
+      height: 30px; padding: 0 10px; font-size: 12px;
+      border: 1px solid var(--gray-200); border-radius: 8px; outline: none;
+      width: 180px;
+    }
+    .search-input:focus { border-color: var(--primary); }
+
+    /* ── Table ── */
+    .table-card { background: var(--white); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: var(--gray-50); border-bottom: 2px solid var(--gray-200); }
+    th { padding: 9px 14px; text-align: left; font-size: 11px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; white-space: nowrap; }
+    td { padding: 9px 14px; font-size: 13px; border-bottom: 1px solid var(--gray-100); white-space: nowrap; }
+    tr:last-child td { border-bottom: none; }
+    tr.clickable { cursor: pointer; }
+    tr.clickable:hover td { background: var(--primary-light); }
+
+    /* ── Badges ── */
+    .dept-tag { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+    .dept-브패 { background: #DBEAFE; color: #1D4ED8; }
+    .dept-소호 { background: #DCFCE7; color: #15803D; }
+    .dept-뷰티 { background: #FCE7F3; color: #9D174D; }
+    .dept-라이프 { background: #FFEDD5; color: #C2410C; }
+    .dept-크비 { background: #EDE9FE; color: #6D28D9; }
+
+    .status-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .s-active { background: #DBEAFE; color: #1D4ED8; }
+    .s-upcoming { background: var(--gray-100); color: var(--gray-600); }
+    .s-done { background: #DCFCE7; color: #15803D; }
+    .pulse { animation: blink 1.5s infinite; }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    .dday { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+    .dd-active { background: #DBEAFE; color: #1D4ED8; }
+    .dd-today { background: #FEE2E2; color: #DC2626; }
+    .dd-soon { background: #FEF3C7; color: #B45309; }
+    .dd-done { color: var(--gray-400); font-size: 11px; }
+    .dd-na { color: var(--gray-400); }
+
+    /* ── Loading / empty ── */
+    .loading { text-align: center; padding: 40px; color: var(--gray-400); }
+    .spinner { width: 28px; height: 28px; border: 3px solid var(--gray-200); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 10px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .empty { text-align: center; padding: 36px; color: var(--gray-400); font-size: 13px; }
+    .error-msg { text-align: center; padding: 20px; color: #DC2626; font-size: 13px; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">📅 협업 스케줄 & 성과</div>
+  <div class="today-badge" id="todayBadge"></div>
+  <div class="month-nav">
+    <button class="btn-nav" onclick="changeMonth(-1)">‹</button>
+    <div class="month-label" id="monthLabel"></div>
+    <button class="btn-nav" onclick="changeMonth(1)">›</button>
+    <button class="btn btn-secondary" onclick="goToday()" style="margin-left:4px">오늘</button>
+  </div>
+  <button class="btn btn-primary" id="perfBtn" onclick="loadPerf()">🔄 성과 새로고침</button>
+  <span class="sync-info" id="syncInfo"></span>
+</div>
+
+<div class="main">
+
+  <!-- 📡 성과 카드 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">📡 진행중 챌린지 성과 <span style="font-weight:400;color:var(--gray-400);font-size:12px">(전일 기준)</span></span>
+      <span class="section-sub" id="perfTime"></span>
+    </div>
+    <div style="margin-bottom:10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;justify-content:space-between">
+      <div id="perfFilterBar" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+      <button id="perfSortBtn" class="btn btn-secondary" style="font-size:12px;white-space:nowrap" onclick="togglePerfSort()">ROAS ↓</button>
+    </div>
+    <div id="perfGrid" class="perf-grid">
+      <div class="loading"><div class="spinner"></div>성과 데이터 로딩 중...</div>
+    </div>
+  </div>
+
+  <!-- 📅 타임라인 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title" id="timelineTitle">📅 타임라인</span>
+      <span class="section-sub" id="timelineCount"></span>
+    </div>
+    <div class="gantt-card">
+      <div class="gantt-legend" id="ganttLegend"></div>
+      <div id="ganttInner"></div>
+    </div>
+  </div>
+
+  <!-- 📋 목록 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">📋 협업건 목록</span>
+      <span class="section-sub" id="listCount"></span>
+    </div>
+    <div class="filter-bar">
+      <button class="tab-btn active" data-f="all">전체</button>
+      <button class="tab-btn" data-f="진행 중">진행 중</button>
+      <button class="tab-btn" data-f="시작 전">시작 전</button>
+      <button class="tab-btn" data-f="완료">완료</button>
+      <input type="text" class="search-input" id="searchInput" placeholder="기획전명 검색..." />
+    </div>
+    <div class="table-card">
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>사업부</th>
+              <th>기획전명</th>
+              <th>기간</th>
+              <th>D-day</th>
+              <th>상태</th>
+            </tr>
+          </thead>
+          <tbody id="listTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// DATA — sync.py 실행 시 아래 블록이 갱신됩니다
+// NOTION_SYNCED_AT: 2026-05-28 15:54
+// CAMPAIGNS_DATA_START
+const CAMPAIGNS = [
+  {"name": "브랜드 페스타", "start": "2026-04-20", "end": "2026-05-04", "dept": "브패", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "4월 직진위크", "start": "2026-04-20", "end": "2026-04-30", "dept": "소호", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "미쏘 쿠폰", "start": "2026-04-20", "end": "2026-04-30", "dept": "브패", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "세터 단독 티셔츠 런칭", "start": "2026-04-24", "end": "2026-05-01", "dept": "브패", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "레벨업 참여사(그룹1)", "start": "2026-04-24", "end": "2026-04-30", "dept": "소호", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "레벨업 참여사(그룹2)", "start": "2026-04-24", "end": "2026-04-30", "dept": "소호", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "레벨업 참여사(그룹3)", "start": "2026-04-24", "end": "2026-04-30", "dept": "소호", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "쇼핑몰위크", "start": "2026-04-27", "end": "2026-06-07", "dept": "소호", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "아나콘다 이너웨어 기획전", "start": "2026-04-28", "end": "2026-05-07", "dept": "브랜드패션", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "leanX스파오 쿠폰", "start": "2026-04-30", "end": "2026-05-06", "dept": "브패", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "5월 30대 홈화면 크리에이터 모집", "start": "2026-05-01", "end": "2026-05-18", "dept": "크비", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "5월 라이브위크", "start": "2026-05-01", "end": "2026-06-07", "dept": "라이프", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "이너웨어 익스클루시브", "start": "2026-05-04", "end": "2026-05-10", "dept": "브랜드패션", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "화요쇼룸 스페셜", "start": "2026-05-04", "end": "2026-05-09", "dept": "브패", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "후아유", "start": "2026-05-04", "end": "2026-05-17", "dept": "브패", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "5월 상시챌린지", "start": "2026-05-07", "end": "2026-05-27", "dept": "크비", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "직진위크", "start": "2026-05-11", "end": "2026-05-17", "dept": "소호", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "이랜드메가위크", "start": "2026-05-11", "end": "2026-05-25", "dept": "크비", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "뷰티위크", "start": "2026-05-11", "end": "2026-06-15", "dept": "뷰티", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "이랜드 메가위크", "start": "2026-05-11", "end": "2026-05-25", "dept": "브패", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "직잭11주년", "start": "2026-05-18", "end": "2026-06-01", "dept": "크비", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "던스트 쇼케이스", "start": "2026-05-18", "end": "2026-05-31", "dept": "브패", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "티셔츠 페스타", "start": "2026-05-18", "end": "2026-06-01", "dept": "브랜드패션", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "11주년 수수료 부스트", "start": "2026-05-18", "end": "2026-06-01", "dept": "크비", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "직잭11주년", "start": "2026-05-18", "end": "2026-05-29", "dept": "소호", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "직잭11주년", "start": "2026-05-18", "end": "2026-05-29", "dept": "브패", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "레벨업 5월 뜻밖의 발견(빈티지걸)", "start": "2026-05-18", "end": "2026-05-31", "dept": "소호", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "레벨업 5월 뜻밖의 발견(무심핏)", "start": "2026-05-18", "end": "2026-05-31", "dept": "소호", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "레벨업 5월 뜻밖의 발견(미니멀페미닌)", "start": "2026-05-18", "end": "2026-05-31", "dept": "소호", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "레벨업 5월 뜻밖의 발견(청순데이트룩)", "start": "2026-05-18", "end": "2026-05-31", "dept": "소호", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "레벨업 5월 뜻밖의 발견(꾸안꾸)", "start": "2026-05-18", "end": "2026-05-31", "dept": "소호", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "레벨업 5월 뜻밖의 발견(체형커버룩)", "start": "2026-05-18", "end": "2026-05-31", "dept": "소호", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "르보네어 단독 기획전", "start": "2026-05-27", "end": "2026-06-07", "dept": "소호", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "잡화 메가위크", "start": "2026-06-01", "end": "2026-06-14", "dept": "브패", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "라이프 페스타", "start": "2026-06-01", "end": "2026-06-15", "dept": "라이프", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "트위 단독 선발매", "start": "2026-06-01", "end": "2026-06-07", "dept": "브패", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "이너웨어위크", "start": "2026-06-08", "end": "2026-06-22", "dept": "브패", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "메인 셀러 기획전", "start": "2026-06-08", "end": "2026-06-14", "dept": "소호", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "착한구두 오프라인", "start": "2026-06-12", "end": "2026-06-28", "dept": "소호", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "직잭팟 상시챌린지", "start": "2026-06-12", "end": "2026-06-29", "dept": "크비", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "직잭팟 바이럴 챌린지", "start": "2026-06-12", "end": "2026-06-29", "dept": "크비", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "직잭팟 탑 수수료 부스트", "start": "2026-06-15", "end": "2026-06-29", "dept": "크비", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "아티드 쇼케이스", "start": "2026-06-15", "end": "2026-06-28", "dept": "브패", "status": null, "headcount": null, "budget": null, "url": ""},
+  {"name": "직잭팟 이벤트 미션", "start": "2026-06-15", "end": "2026-06-29", "dept": "크비", "status": null, "headcount": null, "budget": null, "url": ""}
+];
+// CAMPAIGNS_DATA_END
+
+// 성과 데이터 — sync.py 실행 시 갱신 (null이면 Redash 직접 호출 시도)
+// PERF_DATA_START
+const PERF_DATA = {"rows": [{"campaign_name": "[크비] 0518-0601 직잭11주년_탑", "recruitment_type": "PRIVATE", "start_date": "2026-05-18", "end_date": "2026-06-01", "inflow_yd": 42861, "inflow_total": 693888, "orders_yd": 1036, "orders_total": 18726, "reward_gmv_yd": 32017420, "reward_gmv_total": 600242055, "direct_gmv_yd": 12311780, "direct_gmv_total": 174819208, "total_roas": 2655.1, "direct_roas": 773.3}, {"campaign_name": "[소호] 0427-0510 쇼핑몰위크_프라이빗", "recruitment_type": "PRIVATE", "start_date": "2026-04-27", "end_date": "2026-05-10", "inflow_yd": 0, "inflow_total": 111304, "orders_yd": 0, "orders_total": 2839, "reward_gmv_yd": 0, "reward_gmv_total": 86955460, "direct_gmv_yd": 0, "direct_gmv_total": 25183450, "total_roas": 1065.3, "direct_roas": 308.5}, {"campaign_name": "[소호] 0427-0510 쇼핑몰위크_인센티브", "recruitment_type": "PRIVATE", "start_date": "2026-04-27", "end_date": "2026-05-10", "inflow_yd": 0, "inflow_total": 92130, "orders_yd": 0, "orders_total": 2314, "reward_gmv_yd": 0, "reward_gmv_total": 71676830, "direct_gmv_yd": 0, "direct_gmv_total": 19970140, "total_roas": 2322.0, "direct_roas": 646.9}, {"campaign_name": "[소호] 0511-0517 직진위크_포스팅", "recruitment_type": "PRIVATE", "start_date": "2026-05-11", "end_date": "2026-05-17", "inflow_yd": 0, "inflow_total": 56279, "orders_yd": 0, "orders_total": 2006, "reward_gmv_yd": 0, "reward_gmv_total": 54224407, "direct_gmv_yd": 0, "direct_gmv_total": 12274190, "total_roas": 1038.3, "direct_roas": 235.0}, {"campaign_name": "[브패] 0420-0504 브랜드 페스타_프라이빗 1주차", "recruitment_type": "PRIVATE", "start_date": "2026-04-20", "end_date": "2026-05-04", "inflow_yd": 0, "inflow_total": 33444, "orders_yd": 0, "orders_total": 978, "reward_gmv_yd": 0, "reward_gmv_total": 34362217, "direct_gmv_yd": 0, "direct_gmv_total": 11849670, "total_roas": 1626.3, "direct_roas": 560.8}, {"campaign_name": "[크비] 0511-0525 이랜드메가위크_탑 크리에이터", "recruitment_type": "PRIVATE", "start_date": "2026-05-11", "end_date": "2026-05-25", "inflow_yd": 0, "inflow_total": 35018, "orders_yd": 0, "orders_total": 1176, "reward_gmv_yd": 0, "reward_gmv_total": 33311510, "direct_gmv_yd": 0, "direct_gmv_total": 5153750, "total_roas": 254.8, "direct_roas": 39.4}, {"campaign_name": "[브랜드패션] 0504-0510 이너웨어 익스클루시브_포스팅 추가 초대", "recruitment_type": "PRIVATE", "start_date": "2026-05-04", "end_date": "2026-05-10", "inflow_yd": 0, "inflow_total": 31572, "orders_yd": 0, "orders_total": 888, "reward_gmv_yd": 0, "reward_gmv_total": 31016989, "direct_gmv_yd": 0, "direct_gmv_total": 13357800, "total_roas": 1824.6, "direct_roas": 785.8}, {"campaign_name": "[크비] 0511-0525 이랜드메가위크_프라이빗", "recruitment_type": "PRIVATE", "start_date": "2026-05-11", "end_date": "2026-05-25", "inflow_yd": 0, "inflow_total": 17446, "orders_yd": 0, "orders_total": 510, "reward_gmv_yd": 0, "reward_gmv_total": 17539610, "direct_gmv_yd": 0, "direct_gmv_total": 6721570, "total_roas": 601.0, "direct_roas": 230.3}, {"campaign_name": "[소호] 0420-0430 4월 직진위크_프라이빗", "recruitment_type": "PRIVATE", "start_date": "2026-04-20", "end_date": "2026-04-30", "inflow_yd": 0, "inflow_total": 17109, "orders_yd": 0, "orders_total": 549, "reward_gmv_yd": 0, "reward_gmv_total": 16739214, "direct_gmv_yd": 0, "direct_gmv_total": 4541770, "total_roas": 735.5, "direct_roas": 199.6}, {"campaign_name": "[브패] 0420-0504 브랜드 페스타_프라이빗 2주차", "recruitment_type": "PRIVATE", "start_date": "2026-04-20", "end_date": "2026-05-04", "inflow_yd": 0, "inflow_total": 14593, "orders_yd": 0, "orders_total": 407, "reward_gmv_yd": 0, "reward_gmv_total": 15781672, "direct_gmv_yd": 0, "direct_gmv_total": 5318710, "total_roas": 1221.4, "direct_roas": 411.6}, {"campaign_name": "[소호] 0511-0517 직진위크_영상형", "recruitment_type": "PRIVATE", "start_date": "2026-05-11", "end_date": "2026-05-17", "inflow_yd": 0, "inflow_total": 18485, "orders_yd": 0, "orders_total": 421, "reward_gmv_yd": 0, "reward_gmv_total": 13374650, "direct_gmv_yd": 0, "direct_gmv_total": 4544160, "total_roas": 559.7, "direct_roas": 190.2}, {"campaign_name": "[크비] 0511-0525 이랜드메가위크_eune 쿠폰", "recruitment_type": "PRIVATE", "start_date": "2026-05-14", "end_date": "2026-05-25", "inflow_yd": 0, "inflow_total": 7599, "orders_yd": 0, "orders_total": 460, "reward_gmv_yd": 0, "reward_gmv_total": 13331450, "direct_gmv_yd": 0, "direct_gmv_total": 7373230, "total_roas": 1478.2, "direct_roas": 817.5}, {"campaign_name": "[브패] 0430-0506 leanX스파오 쿠폰", "recruitment_type": "PRIVATE", "start_date": "2026-04-30", "end_date": "2026-05-06", "inflow_yd": 0, "inflow_total": 6770, "orders_yd": 0, "orders_total": 398, "reward_gmv_yd": 0, "reward_gmv_total": 12646780, "direct_gmv_yd": 0, "direct_gmv_total": 4186000, "total_roas": 2311.0, "direct_roas": 764.9}, {"campaign_name": "[크비] 0511-0525 이랜드메가위크_주미니", "recruitment_type": "PRIVATE", "start_date": "2026-05-11", "end_date": "2026-05-25", "inflow_yd": 0, "inflow_total": 15502, "orders_yd": 0, "orders_total": 400, "reward_gmv_yd": 0, "reward_gmv_total": 12251000, "direct_gmv_yd": 0, "direct_gmv_total": 2303290, "total_roas": 126.9, "direct_roas": 23.9}, {"campaign_name": "[뷰티] 0511-0518 뷰티위크_프라이빗", "recruitment_type": "PRIVATE", "start_date": "2026-05-11", "end_date": "2026-05-18", "inflow_yd": 0, "inflow_total": 9301, "orders_yd": 0, "orders_total": 620, "reward_gmv_yd": 0, "reward_gmv_total": 11930460, "direct_gmv_yd": 0, "direct_gmv_total": 6856170, "total_roas": 386.0, "direct_roas": 221.8}, {"campaign_name": "[크비] 0511-0525 이랜드메가위크_탑 크리에이터2", "recruitment_type": "PRIVATE", "start_date": "2026-05-11", "end_date": "2026-05-25", "inflow_yd": 0, "inflow_total": 11571, "orders_yd": 0, "orders_total": 351, "reward_gmv_yd": 0, "reward_gmv_total": 10874360, "direct_gmv_yd": 0, "direct_gmv_total": 2623490, "total_roas": 302.6, "direct_roas": 73.0}, {"campaign_name": "[크비] 5월 30대 홈화면 크리에이터 모집_프라이빗", "recruitment_type": "PRIVATE", "start_date": "2026-05-01", "end_date": "2026-05-18", "inflow_yd": 0, "inflow_total": 12170, "orders_yd": 0, "orders_total": 293, "reward_gmv_yd": 0, "reward_gmv_total": 10261600, "direct_gmv_yd": 0, "direct_gmv_total": 2013490, "total_roas": 109.9, "direct_roas": 21.6}, {"campaign_name": "[브패] 0518-0531 던스트 쇼케이스", "recruitment_type": "PRIVATE", "start_date": "2026-05-18", "end_date": "2026-05-31", "inflow_yd": 111, "inflow_total": 4107, "orders_yd": 3, "orders_total": 181, "reward_gmv_yd": 80700, "reward_gmv_total": 9448220, "direct_gmv_yd": 0, "direct_gmv_total": 5400400, "total_roas": 102.5, "direct_roas": 58.6}, {"campaign_name": "[브랜드패션] 0501-0507 아나콘다 이너웨어 기획전", "recruitment_type": "PRIVATE", "start_date": "2026-04-28", "end_date": "2026-05-07", "inflow_yd": 0, "inflow_total": 5146, "orders_yd": 0, "orders_total": 209, "reward_gmv_yd": 0, "reward_gmv_total": 9186670, "direct_gmv_yd": 0, "direct_gmv_total": 2140200, "total_roas": 204.3, "direct_roas": 47.6}, {"campaign_name": "[크비] 0511-0525 이랜드메가위크_몸뿌볼 쿠폰", "recruitment_type": "PRIVATE", "start_date": "2026-05-15", "end_date": "2026-05-25", "inflow_yd": 0, "inflow_total": 5451, "orders_yd": 0, "orders_total": 231, "reward_gmv_yd": 0, "reward_gmv_total": 7735670, "direct_gmv_yd": 0, "direct_gmv_total": 1710070, "total_roas": 9439.8, "direct_roas": 2086.8}, {"campaign_name": "[크비] 0511-0525 이랜드메가위크_프라이빗_포스팅", "recruitment_type": "PRIVATE", "start_date": "2026-05-11", "end_date": "2026-05-25", "inflow_yd": 0, "inflow_total": 9605, "orders_yd": 0, "orders_total": 295, "reward_gmv_yd": 0, "reward_gmv_total": 7640220, "direct_gmv_yd": 0, "direct_gmv_total": 904650, "total_roas": 1314.6, "direct_roas": 155.7}, {"campaign_name": "[브랜드패션] 0518-0601 티셔츠 페스타_프라이빗", "recruitment_type": "PRIVATE", "start_date": "2026-05-18", "end_date": "2026-06-01", "inflow_yd": 153, "inflow_total": 5425, "orders_yd": 6, "orders_total": 129, "reward_gmv_yd": 157310, "reward_gmv_total": 4078500, "direct_gmv_yd": 49000, "direct_gmv_total": 658990, "total_roas": 189.9, "direct_roas": 30.7}, {"campaign_name": "[크비] 0511-0525 이랜드메가위크_서랍장", "recruitment_type": "PRIVATE", "start_date": "2026-05-14", "end_date": "2026-05-25", "inflow_yd": 0, "inflow_total": 2853, "orders_yd": 0, "orders_total": 63, "reward_gmv_yd": 0, "reward_gmv_total": 2211360, "direct_gmv_yd": 0, "direct_gmv_total": 258410, "total_roas": 322.1, "direct_roas": 37.6}, {"campaign_name": "[브패] 0505-0506 화요쇼룸 스페셜_프라이빗", "recruitment_type": "PRIVATE", "start_date": "2026-05-04", "end_date": "2026-05-09", "inflow_yd": 0, "inflow_total": 2525, "orders_yd": 0, "orders_total": 52, "reward_gmv_yd": 0, "reward_gmv_total": 2205140, "direct_gmv_yd": 0, "direct_gmv_total": 671650, "total_roas": 322.6, "direct_roas": 98.3}, {"campaign_name": "[브패] 0424-0501 세터 단독 티셔츠 런칭", "recruitment_type": "PRIVATE", "start_date": "2026-04-24", "end_date": "2026-05-01", "inflow_yd": 0, "inflow_total": 1605, "orders_yd": 0, "orders_total": 31, "reward_gmv_yd": 0, "reward_gmv_total": 1326700, "direct_gmv_yd": 0, "direct_gmv_total": 260960, "total_roas": 13.9, "direct_roas": 2.7}, {"campaign_name": "[크비] 5월 30대 홈화면 크리에이터 모집_서랍장 추가 지급", "recruitment_type": "PRIVATE", "start_date": "2026-05-06", "end_date": "2026-05-18", "inflow_yd": 0, "inflow_total": 898, "orders_yd": 0, "orders_total": 27, "reward_gmv_yd": 0, "reward_gmv_total": 850470, "direct_gmv_yd": 0, "direct_gmv_total": 282000, "total_roas": 195.5, "direct_roas": 64.8}, {"campaign_name": "[소호] 0420-0430 4월 직진위크_프라이빗_신규가입", "recruitment_type": "PRIVATE", "start_date": "2026-04-20", "end_date": "2026-04-30", "inflow_yd": 0, "inflow_total": 301, "orders_yd": 0, "orders_total": 6, "reward_gmv_yd": 0, "reward_gmv_total": 164190, "direct_gmv_yd": 0, "direct_gmv_total": 65440, "total_roas": 161.8, "direct_roas": 64.5}, {"campaign_name": "[브랜드패션] 0504-0510 이너웨어 익스클루시브_프라이빗", "recruitment_type": "PRIVATE", "start_date": "2026-05-04", "end_date": "2026-05-10", "inflow_yd": 0, "inflow_total": 111, "orders_yd": 0, "orders_total": 2, "reward_gmv_yd": 0, "reward_gmv_total": 53830, "direct_gmv_yd": 0, "direct_gmv_total": 33930, "total_roas": 1.8, "direct_roas": 1.1}, {"campaign_name": "[브패] 0504-0517 후아유_프라이빗", "recruitment_type": "PRIVATE", "start_date": "2026-05-04", "end_date": "2026-05-17", "inflow_yd": 0, "inflow_total": 85, "orders_yd": 0, "orders_total": 1, "reward_gmv_yd": 0, "reward_gmv_total": 5160, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": 0.6, "direct_roas": 0.0}, {"campaign_name": "[크비] 찾아주 챌린지 정산 누락건", "recruitment_type": "PRIVATE", "start_date": "2026-04-13", "end_date": "2026-04-30", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[스타일디렉터] 3월 우수활동자 베네핏 지급", "recruitment_type": "PRIVATE", "start_date": "2026-04-13", "end_date": "2026-04-30", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[소호] 0612-0614 착한구두 오프라인_프라이빗", "recruitment_type": "PRIVATE", "start_date": "2026-06-12", "end_date": "2026-06-16", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[뷰티] 0407-0420 뷰티페스타_또리뷰 정산", "recruitment_type": "PRIVATE", "start_date": "2026-04-16", "end_date": "2026-04-30", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[스타일디렉터] 4월 릴스 셀러 케어 모집", "recruitment_type": "PRIVATE", "start_date": "2026-05-09", "end_date": "2026-05-12", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[스타일디렉터] 4월 릴스 활동 베네핏", "recruitment_type": "PRIVATE", "start_date": "2026-05-11", "end_date": "2026-05-22", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[뷰티] 0608-0615 뷰티위크_프라이빗", "recruitment_type": "PRIVATE", "start_date": "2026-06-08", "end_date": "2026-06-15", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[크비] 0615-0629 직잭팟 탑 수수료 부스트", "recruitment_type": "PRIVATE", "start_date": "2026-06-15", "end_date": "2026-06-29", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[스타일디렉터] 4월 우수활동자 베네핏 지급", "recruitment_type": "PRIVATE", "start_date": "2026-05-15", "end_date": "2026-05-31", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[스타일디렉터] 0615-0629 직잭팟 오프라인 활동", "recruitment_type": "PRIVATE", "start_date": "2026-06-05", "end_date": "2026-06-29", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[브패] 0608-0622 이너웨어위크", "recruitment_type": "PRIVATE", "start_date": "2026-06-08", "end_date": "2026-06-22", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[크비] midori 탑크리에이터 50만 포인트", "recruitment_type": "PRIVATE", "start_date": "2026-04-15", "end_date": "2026-04-30", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[릴스디렉터] 제품 구매 지원금", "recruitment_type": "PRIVATE", "start_date": "2026-04-27", "end_date": "2026-05-08", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[소호] 0612-0614 착한구두 오프라인_오픈 대상 재초대", "recruitment_type": "PRIVATE", "start_date": "2026-06-19", "end_date": "2026-06-28", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[스타일디렉터] 4월 릴스 활동 베네핏", "recruitment_type": "PRIVATE", "start_date": "2026-04-24", "end_date": "2026-05-09", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[크비] 올디너림 탑크리에이터 50만 포인트", "recruitment_type": "PRIVATE", "start_date": "2026-05-26", "end_date": "2026-05-31", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[스타일디렉터] 릴스 스튜디오 추가 지원", "recruitment_type": "PRIVATE", "start_date": "2026-04-28", "end_date": "2026-05-08", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[소호] 0309-0315 쇼핑몰위크 정산 누락건", "recruitment_type": "PRIVATE", "start_date": "2026-04-03", "end_date": "2026-04-30", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "숏폼 콘텐츠 테스트용 비공개 캠페인 입니다", "recruitment_type": "PRIVATE", "start_date": "2026-05-06", "end_date": "2026-05-16", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[UA 설부스트] 반려 재제출 미처리 정산금", "recruitment_type": "PRIVATE", "start_date": "2026-04-22", "end_date": "2026-04-29", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[브패] 0601-0614 잡화 메가위크", "recruitment_type": "PRIVATE", "start_date": "2026-06-01", "end_date": "2026-06-14", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[소호] 0309-0315 쇼핑몰위크 인센티브 누락건", "recruitment_type": "PRIVATE", "start_date": "2026-04-27", "end_date": "2026-04-30", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[소호] 0420-0430 4월 직진위크_포인트 지급", "recruitment_type": "PRIVATE", "start_date": "2026-04-20", "end_date": "2026-04-30", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[크비] 0511-0525 이랜드메가위크_라이브", "recruitment_type": "PRIVATE", "start_date": "2026-05-11", "end_date": "2026-05-25", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[크비] 4월 챌린지 미지급 건 재지급_현금", "recruitment_type": "PRIVATE", "start_date": "2026-05-07", "end_date": "2026-05-27", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[스타일디렉터] 0615-0629 직잭팟 파트너쉽 광고", "recruitment_type": "PRIVATE", "start_date": "2026-06-15", "end_date": "2026-06-29", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[크비] 30대홈개편_콘텐츠 제출/정산_누락건", "recruitment_type": "PRIVATE", "start_date": "2026-05-14", "end_date": "2026-05-22", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[UA] 직잭팟 광고소재활용_영상형정산(파트너쉽 광고)_그리못,성혜,와사비콩데일리룩", "recruitment_type": "PRIVATE", "start_date": "2026-04-22", "end_date": "2026-04-28", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[소호] 0612-0614 착한구두 오프라인_프라이빗(탑)", "recruitment_type": "PRIVATE", "start_date": "2026-06-19", "end_date": "2026-06-28", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[소호] 0602-0607 쇼핑몰위크_프라이빗", "recruitment_type": "PRIVATE", "start_date": "2026-06-02", "end_date": "2026-06-07", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[스타일디렉터] 4월 릴스 셀러 케어 모집", "recruitment_type": "PRIVATE", "start_date": "2026-04-24", "end_date": "2026-05-08", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[크비] 0511-0525 이랜드메가위크_지유한날 2차 활용", "recruitment_type": "PRIVATE", "start_date": "2026-05-13", "end_date": "2026-05-25", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[크비] 4월 챌린지 미지급 건 재지급_포인트", "recruitment_type": "PRIVATE", "start_date": "2026-05-07", "end_date": "2026-05-27", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[스타일디렉터] 3월 우수활동자 베네핏 지급_누락 건", "recruitment_type": "PRIVATE", "start_date": "2026-05-14", "end_date": "2026-05-22", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[브패] 0504-0517 후아유_프라이빗_서랍장", "recruitment_type": "PRIVATE", "start_date": "2026-05-14", "end_date": "2026-05-17", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[뷰티] 0608-0615 뷰티위크_스레드", "recruitment_type": "PRIVATE", "start_date": "2026-06-08", "end_date": "2026-06-15", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[커머스마케팅] 0617 명예영국인 라이브방송", "recruitment_type": "PRIVATE", "start_date": "2026-06-14", "end_date": "2026-06-17", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[소호] 0608-0614 메인 셀러 기획전_프라이빗", "recruitment_type": "PRIVATE", "start_date": "2026-06-08", "end_date": "2026-06-14", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[스타일디렉터] 0615-0629 직잭팟 온라인 활동", "recruitment_type": "PRIVATE", "start_date": "2026-06-14", "end_date": "2026-06-29", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[크비] 0615-0629 직잭팟 상시챌린지_신규리드", "recruitment_type": "PRIVATE", "start_date": "2026-06-12", "end_date": "2026-06-29", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[소호] 0407-0412 쇼핑몰위크_쇼핑지원금 페이백", "recruitment_type": "PRIVATE", "start_date": "2026-04-22", "end_date": "2026-04-30", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[크비] 0506-0527 5월 상시챌린지", "recruitment_type": "PUBLIC", "start_date": "2026-05-07", "end_date": "2026-05-27", "inflow_yd": 29803, "inflow_total": 565348, "orders_yd": 681, "orders_total": 15193, "reward_gmv_yd": 21153970, "reward_gmv_total": 491685079, "direct_gmv_yd": 7877720, "direct_gmv_total": 143889400, "total_roas": 2629.1, "direct_roas": 769.4}, {"campaign_name": "[크비] 0518-0601 11주년 수수료 부스트", "recruitment_type": "PUBLIC", "start_date": "2026-05-18", "end_date": "2026-06-01", "inflow_yd": 20360, "inflow_total": 258941, "orders_yd": 466, "orders_total": 6837, "reward_gmv_yd": 14021100, "reward_gmv_total": 210299131, "direct_gmv_yd": 3575840, "direct_gmv_total": 41222259, "total_roas": 3623.7, "direct_roas": 710.3}, {"campaign_name": "[브패] 0511-0525 이랜드 메가위크_수수료 부스트", "recruitment_type": "PUBLIC", "start_date": "2026-05-11", "end_date": "2026-05-25", "inflow_yd": 0, "inflow_total": 107433, "orders_yd": 0, "orders_total": 3459, "reward_gmv_yd": 0, "reward_gmv_total": 100457260, "direct_gmv_yd": 0, "direct_gmv_total": 20592030, "total_roas": 2407.6, "direct_roas": 493.5}, {"campaign_name": "[크비] 0511-0525 이랜드메가위크_오픈_포스팅", "recruitment_type": "PUBLIC", "start_date": "2026-05-11", "end_date": "2026-05-25", "inflow_yd": 0, "inflow_total": 82347, "orders_yd": 0, "orders_total": 2646, "reward_gmv_yd": 0, "reward_gmv_total": 76502979, "direct_gmv_yd": 0, "direct_gmv_total": 16133085, "total_roas": 862.5, "direct_roas": 181.9}, {"campaign_name": "[커머스마케팅] 0518-0520 직잭 11주년 프로모션", "recruitment_type": "PUBLIC", "start_date": "2026-05-18", "end_date": "2026-06-01", "inflow_yd": 3061, "inflow_total": 53256, "orders_yd": 84, "orders_total": 1538, "reward_gmv_yd": 2025030, "reward_gmv_total": 49427004, "direct_gmv_yd": 520580, "direct_gmv_total": 10867710, "total_roas": 477.5, "direct_roas": 105.0}, {"campaign_name": "[소호] 0518-0601 직잭11주년_포스팅", "recruitment_type": "PUBLIC", "start_date": "2026-05-18", "end_date": "2026-05-29", "inflow_yd": 4111, "inflow_total": 51758, "orders_yd": 100, "orders_total": 1569, "reward_gmv_yd": 2485970, "reward_gmv_total": 45833620, "direct_gmv_yd": 598030, "direct_gmv_total": 10966800, "total_roas": 632.8, "direct_roas": 151.4}, {"campaign_name": "[브패] 0518-0601 직잭11주년", "recruitment_type": "PUBLIC", "start_date": "2026-05-18", "end_date": "2026-05-29", "inflow_yd": 1792, "inflow_total": 34940, "orders_yd": 71, "orders_total": 1007, "reward_gmv_yd": 2953630, "reward_gmv_total": 34779287, "direct_gmv_yd": 1159710, "direct_gmv_total": 9971750, "total_roas": 1164.3, "direct_roas": 333.8}, {"campaign_name": "[소호] 0420-0430 4월 직진위크_공개", "recruitment_type": "PUBLIC", "start_date": "2026-04-20", "end_date": "2026-04-30", "inflow_yd": 0, "inflow_total": 42149, "orders_yd": 0, "orders_total": 1085, "reward_gmv_yd": 0, "reward_gmv_total": 30668107, "direct_gmv_yd": 0, "direct_gmv_total": 7135270, "total_roas": 530.0, "direct_roas": 123.3}, {"campaign_name": "[크비] 0511-0525 이랜드메가위크_상품 제공 오픈", "recruitment_type": "PUBLIC", "start_date": "2026-05-11", "end_date": "2026-05-25", "inflow_yd": 0, "inflow_total": 29598, "orders_yd": 0, "orders_total": 1060, "reward_gmv_yd": 0, "reward_gmv_total": 29140832, "direct_gmv_yd": 0, "direct_gmv_total": 5601760, "total_roas": 1218.3, "direct_roas": 234.2}, {"campaign_name": "[브패] 0420-0504 브랜드 페스타", "recruitment_type": "PUBLIC", "start_date": "2026-04-20", "end_date": "2026-05-04", "inflow_yd": 0, "inflow_total": 16265, "orders_yd": 0, "orders_total": 693, "reward_gmv_yd": 0, "reward_gmv_total": 27128608, "direct_gmv_yd": 0, "direct_gmv_total": 14579920, "total_roas": 1530.8, "direct_roas": 822.7}, {"campaign_name": "[라이프] 5월 라이브위크_유라이크", "recruitment_type": "PUBLIC", "start_date": "2026-05-01", "end_date": "2026-06-07", "inflow_yd": 46, "inflow_total": 1198, "orders_yd": 2, "orders_total": 47, "reward_gmv_yd": 598000, "reward_gmv_total": 16307950, "direct_gmv_yd": 549000, "direct_gmv_total": 7203000, "total_roas": 2041.0, "direct_roas": 901.5}, {"campaign_name": "[크비] 0511-0525 이랜드메가위크_상품 제공 오픈 (클라비스,에블린)", "recruitment_type": "PUBLIC", "start_date": "2026-05-11", "end_date": "2026-05-25", "inflow_yd": 0, "inflow_total": 17082, "orders_yd": 0, "orders_total": 396, "reward_gmv_yd": 0, "reward_gmv_total": 11899050, "direct_gmv_yd": 0, "direct_gmv_total": 2245510, "total_roas": 1153.0, "direct_roas": 217.6}, {"campaign_name": "[소호] 0511-0517 직진위크", "recruitment_type": "PUBLIC", "start_date": "2026-05-11", "end_date": "2026-05-17", "inflow_yd": 0, "inflow_total": 11334, "orders_yd": 0, "orders_total": 373, "reward_gmv_yd": 0, "reward_gmv_total": 11432610, "direct_gmv_yd": 0, "direct_gmv_total": 2881050, "total_roas": 422.9, "direct_roas": 106.6}, {"campaign_name": "[소호] 0518-0601 직잭11주년_영상형", "recruitment_type": "PUBLIC", "start_date": "2026-05-18", "end_date": "2026-05-29", "inflow_yd": 1146, "inflow_total": 16641, "orders_yd": 25, "orders_total": 349, "reward_gmv_yd": 705920, "reward_gmv_total": 10987365, "direct_gmv_yd": 213510, "direct_gmv_total": 2944780, "total_roas": 426.1, "direct_roas": 114.2}, {"campaign_name": "[브랜드패션] 0518-0601 티셔츠 페스타", "recruitment_type": "PUBLIC", "start_date": "2026-05-18", "end_date": "2026-06-01", "inflow_yd": 539, "inflow_total": 9286, "orders_yd": 14, "orders_total": 328, "reward_gmv_yd": 401310, "reward_gmv_total": 10888145, "direct_gmv_yd": 26910, "direct_gmv_total": 3418110, "total_roas": 1085.5, "direct_roas": 340.8}, {"campaign_name": "[소호] 0427-0510 쇼핑몰위크_공개", "recruitment_type": "PUBLIC", "start_date": "2026-04-27", "end_date": "2026-05-10", "inflow_yd": 0, "inflow_total": 9937, "orders_yd": 0, "orders_total": 321, "reward_gmv_yd": 0, "reward_gmv_total": 8754060, "direct_gmv_yd": 0, "direct_gmv_total": 2396840, "total_roas": 347.0, "direct_roas": 95.0}, {"campaign_name": "[크비] 0511-0525 이랜드메가위크_오픈_포스팅", "recruitment_type": "PUBLIC", "start_date": "2026-05-11", "end_date": "2026-05-25", "inflow_yd": 0, "inflow_total": 12410, "orders_yd": 0, "orders_total": 239, "reward_gmv_yd": 0, "reward_gmv_total": 7822210, "direct_gmv_yd": 0, "direct_gmv_total": 1953440, "total_roas": 446.3, "direct_roas": 111.5}, {"campaign_name": "[브패] 0420-0430 미쏘 쿠폰", "recruitment_type": "PUBLIC", "start_date": "2026-04-20", "end_date": "2026-04-30", "inflow_yd": 0, "inflow_total": 9860, "orders_yd": 0, "orders_total": 230, "reward_gmv_yd": 0, "reward_gmv_total": 7193093, "direct_gmv_yd": 0, "direct_gmv_total": 1305170, "total_roas": 5496.3, "direct_roas": 997.3}, {"campaign_name": "[소호] 0525-0531 레벨업 5월 뜻밖의 발견(빈티지걸)", "recruitment_type": "PUBLIC", "start_date": "2026-05-18", "end_date": "2026-05-31", "inflow_yd": 143, "inflow_total": 7247, "orders_yd": 5, "orders_total": 203, "reward_gmv_yd": 126050, "reward_gmv_total": 5884640, "direct_gmv_yd": 0, "direct_gmv_total": 753110, "total_roas": 517.5, "direct_roas": 66.2}, {"campaign_name": "[크비] 5월 30대 홈화면 크리에이터 모집_오픈", "recruitment_type": "PUBLIC", "start_date": "2026-05-01", "end_date": "2026-05-18", "inflow_yd": 0, "inflow_total": 8462, "orders_yd": 0, "orders_total": 180, "reward_gmv_yd": 0, "reward_gmv_total": 5784020, "direct_gmv_yd": 0, "direct_gmv_total": 1844470, "total_roas": 227.9, "direct_roas": 72.7}, {"campaign_name": "[브패] 0504-0517 후아유_오픈_포스팅", "recruitment_type": "PUBLIC", "start_date": "2026-05-04", "end_date": "2026-05-17", "inflow_yd": 0, "inflow_total": 5258, "orders_yd": 0, "orders_total": 133, "reward_gmv_yd": 0, "reward_gmv_total": 3837920, "direct_gmv_yd": 0, "direct_gmv_total": 803970, "total_roas": 104.0, "direct_roas": 21.8}, {"campaign_name": "[소호] 0525-0531 레벨업 5월 뜻밖의 발견(무심핏)", "recruitment_type": "PUBLIC", "start_date": "2026-05-18", "end_date": "2026-05-31", "inflow_yd": 85, "inflow_total": 5761, "orders_yd": 0, "orders_total": 124, "reward_gmv_yd": 0, "reward_gmv_total": 3827070, "direct_gmv_yd": 0, "direct_gmv_total": 435100, "total_roas": 441.3, "direct_roas": 50.2}, {"campaign_name": "[브패] 0505-0506 화요쇼룸 스페셜_오픈형", "recruitment_type": "PUBLIC", "start_date": "2026-05-04", "end_date": "2026-05-09", "inflow_yd": 0, "inflow_total": 3639, "orders_yd": 0, "orders_total": 85, "reward_gmv_yd": 0, "reward_gmv_total": 3216520, "direct_gmv_yd": 0, "direct_gmv_total": 1370530, "total_roas": 627.8, "direct_roas": 267.5}, {"campaign_name": "[소호] 0525-0531 레벨업 5월 뜻밖의 발견(미니멀페미닌)", "recruitment_type": "PUBLIC", "start_date": "2026-05-18", "end_date": "2026-05-31", "inflow_yd": 75, "inflow_total": 4145, "orders_yd": 1, "orders_total": 99, "reward_gmv_yd": 36500, "reward_gmv_total": 3102290, "direct_gmv_yd": 0, "direct_gmv_total": 425730, "total_roas": 250.6, "direct_roas": 34.4}, {"campaign_name": "[소호] 0525-0531 레벨업 5월 뜻밖의 발견(청순데이트룩)", "recruitment_type": "PUBLIC", "start_date": "2026-05-18", "end_date": "2026-05-31", "inflow_yd": 60, "inflow_total": 3480, "orders_yd": 1, "orders_total": 76, "reward_gmv_yd": 0, "reward_gmv_total": 2403320, "direct_gmv_yd": 0, "direct_gmv_total": 53540, "total_roas": 234.0, "direct_roas": 5.2}, {"campaign_name": "[라이프] 5월 라이브위크_라피타 특가 소개", "recruitment_type": "PUBLIC", "start_date": "2026-05-18", "end_date": "2026-05-24", "inflow_yd": 0, "inflow_total": 545, "orders_yd": 0, "orders_total": 20, "reward_gmv_yd": 0, "reward_gmv_total": 2265420, "direct_gmv_yd": 0, "direct_gmv_total": 708640, "total_roas": 533.5, "direct_roas": 166.9}, {"campaign_name": "[브패] 0504-0517 후아유_오픈", "recruitment_type": "PUBLIC", "start_date": "2026-05-04", "end_date": "2026-05-17", "inflow_yd": 0, "inflow_total": 2018, "orders_yd": 0, "orders_total": 64, "reward_gmv_yd": 0, "reward_gmv_total": 2155750, "direct_gmv_yd": 0, "direct_gmv_total": 871290, "total_roas": 214.9, "direct_roas": 86.9}, {"campaign_name": "[브랜드패션] 0504-0510 이너웨어 익스클루시브", "recruitment_type": "PUBLIC", "start_date": "2026-05-04", "end_date": "2026-05-10", "inflow_yd": 0, "inflow_total": 1908, "orders_yd": 0, "orders_total": 66, "reward_gmv_yd": 0, "reward_gmv_total": 1938690, "direct_gmv_yd": 0, "direct_gmv_total": 500400, "total_roas": 328.1, "direct_roas": 84.7}, {"campaign_name": "[뷰티] 0511-0518 뷰티위크", "recruitment_type": "PUBLIC", "start_date": "2026-05-11", "end_date": "2026-05-18", "inflow_yd": 0, "inflow_total": 1310, "orders_yd": 0, "orders_total": 67, "reward_gmv_yd": 0, "reward_gmv_total": 1938070, "direct_gmv_yd": 0, "direct_gmv_total": 801460, "total_roas": 149.2, "direct_roas": 61.7}, {"campaign_name": "[라이프] 5월 라이브위크_풀리오", "recruitment_type": "PUBLIC", "start_date": "2026-05-01", "end_date": "2026-06-07", "inflow_yd": 14, "inflow_total": 247, "orders_yd": 1, "orders_total": 14, "reward_gmv_yd": 159000, "reward_gmv_total": 1805350, "direct_gmv_yd": 159000, "direct_gmv_total": 1182000, "total_roas": 430.8, "direct_roas": 282.1}, {"campaign_name": "[라이프] 5월 라이브위크_글램팜", "recruitment_type": "PUBLIC", "start_date": "2026-05-01", "end_date": "2026-06-07", "inflow_yd": 0, "inflow_total": 473, "orders_yd": 0, "orders_total": 16, "reward_gmv_yd": 0, "reward_gmv_total": 971200, "direct_gmv_yd": 0, "direct_gmv_total": 129000, "total_roas": 226.0, "direct_roas": 30.0}, {"campaign_name": "[소호] 0424-0430 레벨업 참여사(그룹1)", "recruitment_type": "PUBLIC", "start_date": "2026-04-24", "end_date": "2026-04-30", "inflow_yd": 0, "inflow_total": 895, "orders_yd": 0, "orders_total": 19, "reward_gmv_yd": 0, "reward_gmv_total": 546630, "direct_gmv_yd": 0, "direct_gmv_total": 84300, "total_roas": 67.4, "direct_roas": 10.4}, {"campaign_name": "[소호] 0525-0531 레벨업 5월 뜻밖의 발견(꾸안꾸)", "recruitment_type": "PUBLIC", "start_date": "2026-05-18", "end_date": "2026-05-31", "inflow_yd": 18, "inflow_total": 741, "orders_yd": 1, "orders_total": 17, "reward_gmv_yd": 29490, "reward_gmv_total": 488840, "direct_gmv_yd": 0, "direct_gmv_total": 77920, "total_roas": 81.3, "direct_roas": 13.0}, {"campaign_name": "[브패] 0504-0517 후아유_오픈_포스팅(추가모집)", "recruitment_type": "PUBLIC", "start_date": "2026-05-07", "end_date": "2026-05-17", "inflow_yd": 0, "inflow_total": 232, "orders_yd": 0, "orders_total": 12, "reward_gmv_yd": 0, "reward_gmv_total": 345540, "direct_gmv_yd": 0, "direct_gmv_total": 131040, "total_roas": 38.0, "direct_roas": 14.4}, {"campaign_name": "[소호] 0424-0430 레벨업 참여사(그룹2)", "recruitment_type": "PUBLIC", "start_date": "2026-04-24", "end_date": "2026-04-30", "inflow_yd": 0, "inflow_total": 685, "orders_yd": 0, "orders_total": 11, "reward_gmv_yd": 0, "reward_gmv_total": 340210, "direct_gmv_yd": 0, "direct_gmv_total": 82000, "total_roas": 56.4, "direct_roas": 13.6}, {"campaign_name": "[소호] 0424-0430 레벨업 참여사(그룹3)", "recruitment_type": "PUBLIC", "start_date": "2026-04-24", "end_date": "2026-04-30", "inflow_yd": 0, "inflow_total": 714, "orders_yd": 0, "orders_total": 14, "reward_gmv_yd": 0, "reward_gmv_total": 334040, "direct_gmv_yd": 0, "direct_gmv_total": 41800, "total_roas": 83.3, "direct_roas": 10.4}, {"campaign_name": "[소호] 0525-0531 레벨업 5월 뜻밖의 발견(체형커버룩)", "recruitment_type": "PUBLIC", "start_date": "2026-05-18", "end_date": "2026-05-31", "inflow_yd": 12, "inflow_total": 88, "orders_yd": 2, "orders_total": 3, "reward_gmv_yd": 64710, "reward_gmv_total": 89940, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": 15.0, "direct_roas": 0.0}, {"campaign_name": "[크비] 0615-0629 직잭팟 상시챌린지", "recruitment_type": "PUBLIC", "start_date": "2026-06-12", "end_date": "2026-06-29", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[브패] 0615-0628 아티드 쇼케이스_공개", "recruitment_type": "PUBLIC", "start_date": "2026-06-15", "end_date": "2026-06-28", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[뷰티] 0608-0615 뷰티위크_오픈", "recruitment_type": "PUBLIC", "start_date": "2026-06-08", "end_date": "2026-06-15", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[크비] 0615-0629 직잭팟 이벤트 미션", "recruitment_type": "PUBLIC", "start_date": "2026-06-15", "end_date": "2026-06-29", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[커머스마케팅] 0617 명예영국인 라이브방송", "recruitment_type": "PUBLIC", "start_date": "2026-06-14", "end_date": "2026-06-17", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[소호] 0601-0607 르보네어 단독 기획전", "recruitment_type": "PUBLIC", "start_date": "2026-05-27", "end_date": "2026-06-07", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[라이브방송] 0410-0601 라방 크리에이터 모집", "recruitment_type": "PUBLIC", "start_date": "2026-06-01", "end_date": "2026-06-30", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[소호] 0602-0607 쇼핑몰위크_공개", "recruitment_type": "PUBLIC", "start_date": "2026-06-02", "end_date": "2026-06-07", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[소호] 0619-0621 착한구두 오프라인_오픈", "recruitment_type": "PUBLIC", "start_date": "2026-06-19", "end_date": "2026-06-28", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[소호] 0608-0614 메인 셀러 기획전", "recruitment_type": "PUBLIC", "start_date": "2026-06-08", "end_date": "2026-06-14", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[라이프] 0601-0615 라이프 페스타", "recruitment_type": "PUBLIC", "start_date": "2026-06-01", "end_date": "2026-06-15", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[크비] 0615-0629 직잭팟 바이럴 챌린지", "recruitment_type": "PUBLIC", "start_date": "2026-06-12", "end_date": "2026-06-29", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[소호] 0612-0614 착한구두 오프라인_오픈", "recruitment_type": "PUBLIC", "start_date": "2026-06-12", "end_date": "2026-06-16", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[브패] 0601-0607 트위 단독 선발매", "recruitment_type": "PUBLIC", "start_date": "2026-06-01", "end_date": "2026-06-07", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}, {"campaign_name": "[브패] 0601-0614 잡화 메가위크", "recruitment_type": "PUBLIC", "start_date": "2026-06-01", "end_date": "2026-06-14", "inflow_yd": 0, "inflow_total": 0, "orders_yd": 0, "orders_total": 0, "reward_gmv_yd": 0, "reward_gmv_total": 0, "direct_gmv_yd": 0, "direct_gmv_total": 0, "total_roas": null, "direct_roas": null}], "synced_at": "2026-05-28 15:54"};
+// PERF_DATA_END
+// ═══════════════════════════════════════════
+
+const API_KEY   = '8uULUCYPSUTZB7zHMfqSM9wGENeEGGIO04iJbRMA';
+// localhost에서 열면 serve.py 프록시 경유, file://에서 열면 직접 호출
+const IS_LOCAL  = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const BASE_URL  = IS_LOCAL ? '' : 'https://redash.kakaostyle.in';
+const PERF_QID  = 29650;
+
+function redashFetch(path, opts = {}) {
+  const url = IS_LOCAL ? `/redash${path}` : `https://redash.kakaostyle.in${path}`;
+  const headers = IS_LOCAL
+    ? { 'Content-Type': 'application/json' }
+    : { 'Authorization': `Key ${API_KEY}`, 'Content-Type': 'application/json' };
+  return fetch(url, { ...opts, headers: { ...headers, ...(opts.headers||{}) } });
+}
+
+const DEPT_COLOR = {
+  '브패': '#2563EB',
+  '소호': '#16A34A',
+  '뷰티': '#DB2777',
+  '라이프': '#EA580C',
+  '크비': '#7C3AED'
+};
+
+const today = new Date();
+today.setHours(0,0,0,0);
+let viewYear  = today.getFullYear();
+let viewMonth = today.getMonth();
+let listFilter = 'all';
+let listSearch = '';
+let perfFilter  = 'all';
+let perfRows    = [];
+const MAIN_DEPTS = new Set(['크비', '소호', '브패', '뷰티', '라이프']);
+let perfShowAll = false;
+let perfSort = 'desc'; // 'desc' | 'asc'
+const PERF_LIMIT = 6;
+
+// ── Init ──────────────────────────────────
+initHeader();
+renderTimeline();
+renderList();
+loadPerf();
+
+// ── Header ───────────────────────────────
+function initHeader() {
+  const d = today;
+  document.getElementById('todayBadge').textContent =
+    `오늘 ${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일`;
+  updateMonthLabel();
+}
+
+function updateMonthLabel() {
+  document.getElementById('monthLabel').textContent =
+    `${viewYear}년 ${viewMonth+1}월`;
+}
+
+function changeMonth(delta) {
+  viewMonth += delta;
+  if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+  if (viewMonth < 0)  { viewMonth = 11; viewYear--; }
+  updateMonthLabel();
+  renderTimeline();
+  renderList();
+}
+
+function goToday() {
+  viewYear  = today.getFullYear();
+  viewMonth = today.getMonth();
+  updateMonthLabel();
+  renderTimeline();
+  renderList();
+}
+
+// ── Timeline (Gantt) ──────────────────────
+function renderTimeline() {
+  const daysInMonth = new Date(viewYear, viewMonth+1, 0).getDate();
+  const mStart = new Date(viewYear, viewMonth, 1);
+  const mEnd   = new Date(viewYear, viewMonth, daysInMonth);
+
+  const items = CAMPAIGNS.filter(c => {
+    if (!c.start) return false;
+    const s = parseDate(c.start);
+    const e = c.end ? parseDate(c.end) : s;
+    return s <= mEnd && e >= mStart;
+  }).sort((a,b) => parseDate(a.start) - parseDate(b.start));
+
+  document.getElementById('timelineTitle').textContent =
+    `📅 ${viewYear}년 ${viewMonth+1}월 타임라인`;
+  document.getElementById('timelineCount').textContent = `${items.length}건`;
+
+  // Legend
+  const deptsInView = [...new Set(items.map(c=>c.dept).filter(Boolean))];
+  document.getElementById('ganttLegend').innerHTML = deptsInView.map(d => `
+    <div class="legend-item">
+      <div class="legend-dot" style="background:${DEPT_COLOR[d]||'#888'}"></div>${d}
+    </div>
+  `).join('');
+
+  if (items.length === 0) {
+    document.getElementById('ganttInner').innerHTML =
+      '<div class="empty">이 달에 협업건이 없어요</div>';
+    return;
+  }
+
+  // Day columns
+  const days = Array.from({length: daysInMonth}, (_,i) => {
+    const d = new Date(viewYear, viewMonth, i+1);
+    return {
+      n: i+1,
+      dow: d.getDay(),
+      isToday: d.getTime() === today.getTime(),
+      isMon: d.getDay() === 1
+    };
+  });
+
+  const todayInView = today >= mStart && today <= mEnd;
+  const todayPct = todayInView
+    ? ((today.getDate() - 0.5) / daysInMonth) * 100 : null;
+
+  const header = `
+    <div class="gantt-header">
+      <div class="gantt-label-col">협업건명</div>
+      <div class="gantt-days-row">
+        ${days.map(d => `
+          <div class="gantt-day
+            ${d.isToday  ? 'is-today'  : ''}
+            ${(d.dow===0||d.dow===6) ? 'is-weekend' : ''}
+            ${d.isMon    ? 'is-mon'    : ''}">
+            ${d.n}
+          </div>`).join('')}
+      </div>
+    </div>`;
+
+  const rows = items.map(c => {
+    const s = parseDate(c.start);
+    const e = c.end ? parseDate(c.end) : s;
+    const color = DEPT_COLOR[c.dept] || '#6B7280';
+
+    const barS = Math.max(1, s <= mStart ? 1 : s.getDate());
+    const barE = Math.min(daysInMonth, e >= mEnd ? daysInMonth : e.getDate());
+    const leftPct  = ((barS - 1) / daysInMonth) * 100;
+    const widthPct = ((barE - barS + 1) / daysInMonth) * 100;
+
+    const sbClass = (s < mStart ? ' starts-before' : '') + (e > mEnd ? ' ends-after' : '');
+    const label   = widthPct > 12 ? c.name.trim() : '';
+
+    const ddStr = getDdayStr(c);
+    const tooltip = `${c.name.trim()} (${c.start}~${c.end||'?'}) | ${c.dept||''} | ${c.headcount!=null?c.headcount+'명':''} | ${ddStr}`;
+
+    const weekendBg = days
+      .filter(d => d.dow===0||d.dow===6)
+      .map(d => `<div class="gantt-weekend-col" style="left:${((d.n-1)/daysInMonth)*100}%;width:${(1/daysInMonth)*100}%"></div>`)
+      .join('');
+
+    return `
+      <div class="gantt-row">
+        <div class="gantt-row-label">
+          <div class="dept-dot" style="background:${color}"></div>
+          <div class="row-name" title="${esc(c.name.trim())}">${esc(c.name.trim())}</div>
+        </div>
+        <div class="gantt-track">
+          ${weekendBg}
+          ${todayPct!=null ? `<div class="gantt-today-line" style="left:${todayPct}%"></div>` : ''}
+          <div class="gantt-bar${sbClass}"
+            style="left:${leftPct}%;width:${widthPct}%;background:${color}"
+            title="${esc(tooltip)}"
+            onclick="window.open('${c.url}','_blank')"
+          >${esc(label)}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('ganttInner').innerHTML = header +
+    `<div class="gantt-rows">${rows}</div>`;
+}
+
+// ── Campaign List ─────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    listFilter = btn.dataset.f;
+    renderList();
+  });
+});
+
+document.getElementById('searchInput').addEventListener('input', e => {
+  listSearch = e.target.value.toLowerCase();
+  renderList();
+});
+
+function renderList() {
+  const cutoff = new Date(today); cutoff.setDate(cutoff.getDate() - 7);
+  let items = CAMPAIGNS.filter(c => {
+    if (calcStatus(c) !== '완료') return true;
+    const e = c.end ? parseDate(c.end) : (c.start ? parseDate(c.start) : null);
+    return e && e >= cutoff;
+  });
+
+  if (listFilter !== 'all') items = items.filter(c => calcStatus(c) === listFilter);
+  if (listSearch)           items = items.filter(c => c.name.toLowerCase().includes(listSearch));
+
+  items.sort((a,b) => {
+    if (!a.start) return 1;
+    if (!b.start) return -1;
+    return parseDate(a.start) - parseDate(b.start);
+  });
+
+  document.getElementById('listCount').textContent = `${items.length}건`;
+
+  const tbody = document.getElementById('listTbody');
+  if (items.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">결과 없음</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = items.map(c => {
+    const dept = c.dept
+      ? `<span class="dept-tag dept-${c.dept}">${c.dept}</span>` : '-';
+    const period = c.start
+      ? `${c.start.slice(5).replace('-','/')}${c.end ? ' ~ '+c.end.slice(5).replace('-','/') : ''}` : '-';
+    const dday = ddayBadge(c);
+    const st   = statusBadge(c);
+    const hc   = c.headcount != null ? c.headcount+'명' : '-';
+    const bgt  = c.budget != null ? fmtBudget(c.budget) : '-';
+    return `
+      <tr ${c.url ? `class="clickable" onclick="window.open('${c.url}','_blank')"` : ''}>
+        <td>${dept}</td>
+        <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis">${esc(c.name.trim())}</td>
+        <td style="font-size:12px;color:var(--gray-600)">${period}</td>
+        <td>${dday}</td>
+        <td>${st}</td>
+      </tr>`;
+  }).join('');
+}
+
+// ── Redash Performance ────────────────────
+async function loadPerf() {
+  // 임베드 데이터가 있으면 바로 사용 (서버 불필요)
+  if (PERF_DATA !== null) {
+    renderPerfCards(PERF_DATA.rows || []);
+    document.getElementById('perfTime').textContent = `${PERF_DATA.synced_at || '?'} 동기화`;
+    document.getElementById('syncInfo').textContent = `동기화: ${PERF_DATA.synced_at || '?'}`;
+    return;
+  }
+
+  // 임베드 데이터 없음 → serve.py 안내
+  document.getElementById('perfGrid').innerHTML = `
+    <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:20px 24px;font-size:13px;color:#92400E;line-height:1.8">
+      <b>📋 성과 데이터를 보려면 터미널에서 sync.py를 실행하세요</b><br>
+      <code style="background:#FEF3C7;padding:4px 10px;border-radius:4px;font-size:12px;display:inline-block;margin-top:8px">
+        python3 /Users/erin.13/Downloads/팀에린/dashboard/sync.py
+      </code><br>
+      <span style="font-size:11px;color:#B45309;margin-top:6px;display:block">
+        실행 후 이 페이지를 새로고침(⌘R)하면 성과 데이터가 나타나요
+      </span>
+    </div>`;
+  document.getElementById('perfBtn').style.display = 'none';
+}
+
+async function pollJob(jobId, max=20) {
+  for (let i=0; i<max; i++) {
+    await sleep(1500);
+    const r = await redashFetch(`/api/jobs/${jobId}`);
+    const j = (await r.json()).job;
+    if (j.status === 3) return j.query_result_id;
+    if (j.status === 4) throw new Error(j.error || '쿼리 실패');
+  }
+  throw new Error('타임아웃');
+}
+
+function extractTag(name) {
+  const m = (name || '').match(/^\[([^\]]+)\]/);
+  if (!m) return '기타';
+  const tag = m[1] === '브랜드패션' ? '브패' : m[1];
+  return MAIN_DEPTS.has(tag) ? tag : '기타';
+}
+
+function renderPerfFilterBar(rows) {
+  const ORDER = ['크비', '소호', '브패', '뷰티', '라이프'];
+  const existing = [...new Set(rows.map(r => extractTag(r.campaign_name)))];
+  const mainTags = ORDER.filter(t => existing.includes(t));
+  const hasOther = existing.includes('기타');
+  const tags = ['전체', ...mainTags, ...(hasOther ? ['기타'] : [])];
+  document.getElementById('perfFilterBar').innerHTML = tags.map(t => `
+    <button class="tab-btn ${t === '전체' ? (perfFilter==='all'?'active':'') : (perfFilter===t?'active':'')}"
+      onclick="setPerfFilter('${t}')">${t === '전체' ? `전체 ${rows.length}건` : t}</button>
+  `).join('');
+}
+
+function setPerfFilter(tag) {
+  perfFilter  = tag === '전체' ? 'all' : tag;
+  perfShowAll = false;
+  renderPerfFilterBar(perfRows);
+  renderPerfGrid();
+}
+
+function togglePerfSort() {
+  perfSort = perfSort === 'desc' ? 'asc' : 'desc';
+  document.getElementById('perfSortBtn').textContent = perfSort === 'desc' ? 'ROAS ↓' : 'ROAS ↑';
+  renderPerfGrid();
+}
+
+function renderPerfGrid() {
+  let filtered = perfFilter === 'all'
+    ? perfRows
+    : perfRows.filter(r => extractTag(r.campaign_name) === perfFilter);
+  filtered = [...filtered].sort((a, b) =>
+    perfSort === 'desc'
+      ? (b.direct_roas || 0) - (a.direct_roas || 0)
+      : (a.direct_roas || 0) - (b.direct_roas || 0)
+  );
+
+  if (filtered.length === 0) {
+    document.getElementById('perfGrid').innerHTML = '<div class="empty">해당 항목 없음</div>';
+    return;
+  }
+
+  const visible = perfShowAll ? filtered : filtered.slice(0, PERF_LIMIT);
+  const hidden  = filtered.length - visible.length;
+
+  const cards = visible.map(r => {
+    const s   = r.start_date ? parseDate(r.start_date) : null;
+    const e   = r.end_date   ? parseDate(r.end_date)   : null;
+    const totalDays   = s && e ? Math.ceil((e-s)/(864e5))+1 : null;
+    const elapsedDays = s ? Math.min(Math.ceil((today-s)/(864e5))+1, totalDays||999) : 0;
+    const pct = totalDays ? Math.round((elapsedDays/totalDays)*100) : 0;
+
+    const directRoas = r.direct_roas || 0;
+    const totalRoas  = r.total_roas  || 0;
+    const roasCls = directRoas >= 200 ? 'roas-high' : directRoas >= 100 ? 'roas-mid' : 'roas-low';
+
+    // try to match with Notion data for dept color
+    const notion = CAMPAIGNS.find(c => {
+      const cn = c.name.trim().replace(/\s+/g,' ');
+      const rn = (r.campaign_name||'').trim().replace(/\s+/g,' ');
+      return cn === rn || rn.includes(cn) || cn.includes(rn);
+    });
+    const color = notion ? (DEPT_COLOR[notion.dept] || '#5B4FE8') : '#5B4FE8';
+
+    const period = [
+      r.start_date?.slice(5).replace('-','/'),
+      r.end_date?.slice(5).replace('-','/')
+    ].filter(Boolean).join(' ~ ');
+
+    return `
+      <div class="perf-card" style="border-left-color:${color}">
+        <div class="perf-top">
+          <div>
+            <div class="perf-name">${esc(r.campaign_name||'-')}</div>
+            <div class="perf-period">${period} · ${elapsedDays}/${totalDays||'?'}일차</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+            <span class="perf-roas ${roasCls}">직접 ${directRoas}%</span>
+            <span class="perf-roas" style="font-size:11px;opacity:0.75">전체 ${totalRoas}%</span>
+          </div>
+        </div>
+        <div class="perf-progress">
+          <div class="perf-bar" style="width:${pct}%;background:${color}"></div>
+        </div>
+        <div class="perf-metrics">
+          <div class="metric">
+            <div class="metric-label">유입</div>
+            <div class="metric-yd">${fmt(r.inflow_yd)}</div>
+            <div class="metric-total">누적 ${fmt(r.inflow_total)}</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">주문수</div>
+            <div class="metric-yd">${fmt(r.orders_yd)}건</div>
+            <div class="metric-total">누적 ${fmt(r.orders_total)}건</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">직접GMV</div>
+            <div class="metric-yd">${fmtK(r.direct_gmv_yd)}</div>
+            <div class="metric-total">누적 ${fmtK(r.direct_gmv_total)}</div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  const moreBtn = hidden > 0
+    ? `<div style="grid-column:1/-1;text-align:center;padding:4px 0">
+        <button class="btn btn-secondary" onclick="perfShowAll=true;renderPerfGrid()" style="font-size:12px">
+          ▾ 더보기 (${hidden}건 더)
+        </button>
+       </div>`
+    : perfShowAll && filtered.length > PERF_LIMIT
+      ? `<div style="grid-column:1/-1;text-align:center;padding:4px 0">
+          <button class="btn btn-secondary" onclick="perfShowAll=false;renderPerfGrid()" style="font-size:12px">
+            ▴ 접기
+          </button>
+         </div>`
+      : '';
+
+  document.getElementById('perfGrid').innerHTML = cards + moreBtn;
+}
+
+function renderPerfCards(rows) {
+  // 진행중인 캠페인만 (start_date <= today <= end_date)
+  const active = (rows || []).filter(r => {
+    const s = r.start_date ? parseDate(r.start_date) : null;
+    const e = r.end_date   ? parseDate(r.end_date)   : null;
+    return s && e && s <= today && today <= e;
+  });
+  if (active.length === 0) {
+    document.getElementById('perfFilterBar').innerHTML = '';
+    document.getElementById('perfGrid').innerHTML = '<div class="empty">현재 진행 중인 챌린지 없음</div>';
+    return;
+  }
+  perfRows   = active;
+  perfFilter = 'all';
+  renderPerfFilterBar(active);
+  renderPerfGrid();
+}
+
+// ── Helpers ───────────────────────────────
+function parseDate(s) {
+  if (!s) return null;
+  const [y,m,d] = s.split('-').map(Number);
+  const dt = new Date(y, m-1, d);
+  dt.setHours(0,0,0,0);
+  return dt;
+}
+
+function getDdayStr(c) {
+  if (!c.start) return '-';
+  const s = parseDate(c.start);
+  const e = c.end ? parseDate(c.end) : s;
+  if (today > e) return '종료';
+  if (today >= s) return `D+${Math.ceil((today-s)/864e5)}`;
+  const diff = Math.ceil((s-today)/864e5);
+  return diff === 0 ? 'D-Day' : `D-${diff}`;
+}
+
+function ddayBadge(c) {
+  if (!c.start) return '<span class="dday dd-na">-</span>';
+  const s = parseDate(c.start);
+  const e = c.end ? parseDate(c.end) : s;
+  if (today > e) return '<span class="dday dd-done">종료</span>';
+  if (today >= s) {
+    const d = Math.ceil((today-s)/864e5);
+    return `<span class="dday dd-active">D+${d}</span>`;
+  }
+  const diff = Math.ceil((s-today)/864e5);
+  if (diff === 0) return '<span class="dday dd-today">D-Day</span>';
+  if (diff <= 7)  return `<span class="dday dd-soon">D-${diff}</span>`;
+  return `<span class="dday">D-${diff}</span>`;
+}
+
+function calcStatus(c) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const s = c.start ? parseDate(c.start) : null;
+  const e = c.end   ? parseDate(c.end)   : s;
+  if (!s) return c.status || '-';
+  if (today < s) return '시작 전';
+  if (today <= e) return '진행 중';
+  return '완료';
+}
+
+function statusBadge(c) {
+  const s = calcStatus(c);
+  if (s === '진행 중') return '<span class="status-badge s-active"><span class="pulse">●</span> 진행 중</span>';
+  if (s === '시작 전') return '<span class="status-badge s-upcoming">시작 전</span>';
+  if (s === '완료')   return '<span class="status-badge s-done">완료</span>';
+  return `<span>${s||'-'}</span>`;
+}
+
+function fmt(n) { return Number(n||0).toLocaleString('ko-KR'); }
+function fmtK(n) {
+  n = Number(n||0);
+  if (n >= 1e8) return (n/1e8).toFixed(1)+'억';
+  if (n >= 1e4) return Math.round(n/1e4)+'만';
+  return n.toLocaleString('ko-KR');
+}
+function fmtBudget(n) {
+  n = Number(n||0);
+  if (n === 0) return '0원';
+  if (n >= 1e8) return (n/1e8).toFixed(0)+'억원';
+  if (n >= 1e4) return Math.round(n/1e4)+'만원';
+  return n.toLocaleString('ko-KR')+'원';
+}
+function esc(s) {
+  return String(s||'')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function sleep(ms) { return new Promise(r => setTimeout(r,ms)); }
+</script>
+</body>
+</html>
