@@ -399,8 +399,13 @@ const DEPT_COLOR = {
 
 const today = new Date();
 today.setHours(0,0,0,0);
-let viewYear  = today.getFullYear();
-let viewMonth = today.getMonth();
+let windowOffset = 0; // days offset from default window (today centered at position 13)
+const WIN_DAYS = 28;
+function getWindowStart() {
+  const d = new Date(today);
+  d.setDate(today.getDate() - 13 + windowOffset);
+  return d;
+}
 let listFilter = 'all';
 let listSearch = '';
 let perfFilter  = 'all';
@@ -425,22 +430,21 @@ function initHeader() {
 }
 
 function updateMonthLabel() {
-  document.getElementById('monthLabel').textContent =
-    `${viewYear}년 ${viewMonth+1}월`;
+  const ws = getWindowStart();
+  const we = new Date(ws); we.setDate(ws.getDate() + WIN_DAYS - 1);
+  const fmt = d => `${d.getMonth()+1}/${d.getDate()}`;
+  document.getElementById('monthLabel').textContent = `${fmt(ws)} ~ ${fmt(we)}`;
 }
 
 function changeMonth(delta) {
-  viewMonth += delta;
-  if (viewMonth > 11) { viewMonth = 0; viewYear++; }
-  if (viewMonth < 0)  { viewMonth = 11; viewYear--; }
+  windowOffset += delta * 7;
   updateMonthLabel();
   renderTimeline();
   renderList();
 }
 
 function goToday() {
-  viewYear  = today.getFullYear();
-  viewMonth = today.getMonth();
+  windowOffset = 0;
   updateMonthLabel();
   renderTimeline();
   renderList();
@@ -448,22 +452,19 @@ function goToday() {
 
 // ── Timeline (Gantt) ──────────────────────
 function renderTimeline() {
-  const daysInMonth = new Date(viewYear, viewMonth+1, 0).getDate();
-  const mStart = new Date(viewYear, viewMonth, 1);
-  const mEnd   = new Date(viewYear, viewMonth, daysInMonth);
+  const wStart = getWindowStart();
+  const wEnd   = new Date(wStart); wEnd.setDate(wStart.getDate() + WIN_DAYS - 1);
 
   const items = CAMPAIGNS.filter(c => {
     if (!c.start) return false;
     const s = parseDate(c.start);
     const e = c.end ? parseDate(c.end) : s;
-    return s <= mEnd && e >= mStart;
+    return s <= wEnd && e >= wStart;
   }).sort((a,b) => parseDate(a.start) - parseDate(b.start));
 
-  document.getElementById('timelineTitle').textContent =
-    `📅 ${viewYear}년 ${viewMonth+1}월 타임라인`;
+  document.getElementById('timelineTitle').textContent = `📅 타임라인`;
   document.getElementById('timelineCount').textContent = `${items.length}건`;
 
-  // Legend
   const deptsInView = [...new Set(items.map(c=>c.dept).filter(Boolean))];
   document.getElementById('ganttLegend').innerHTML = deptsInView.map(d => `
     <div class="legend-item">
@@ -473,24 +474,23 @@ function renderTimeline() {
 
   if (items.length === 0) {
     document.getElementById('ganttInner').innerHTML =
-      '<div class="empty">이 달에 협업건이 없어요</div>';
+      '<div class="empty">이 기간에 협업건이 없어요</div>';
     return;
   }
 
-  // Day columns
-  const days = Array.from({length: daysInMonth}, (_,i) => {
-    const d = new Date(viewYear, viewMonth, i+1);
+  // 28-day window — each day is one slot
+  const days = Array.from({length: WIN_DAYS}, (_, i) => {
+    const d = new Date(wStart); d.setDate(wStart.getDate() + i);
     return {
-      n: i+1,
+      d, n: d.getDate(), month: d.getMonth()+1,
       dow: d.getDay(),
       isToday: d.getTime() === today.getTime(),
       isMon: d.getDay() === 1
     };
   });
 
-  const todayInView = today >= mStart && today <= mEnd;
-  const todayPct = todayInView
-    ? ((today.getDate() - 0.5) / daysInMonth) * 100 : null;
+  const todayIdx = days.findIndex(d => d.isToday);
+  const todayPct = todayIdx >= 0 ? ((todayIdx + 0.5) / WIN_DAYS) * 100 : null;
 
   const header = `
     <div class="gantt-header">
@@ -501,31 +501,33 @@ function renderTimeline() {
             ${d.isToday  ? 'is-today'  : ''}
             ${(d.dow===0||d.dow===6) ? 'is-weekend' : ''}
             ${d.isMon    ? 'is-mon'    : ''}">
-            ${d.n}
+            ${d.n === 1 ? `<span style="font-size:9px;display:block;line-height:1;opacity:0.55">${d.month}/</span>` : ''}${d.n}
           </div>`).join('')}
       </div>
     </div>`;
+
+  const weekendBg = days
+    .filter(d => d.dow===0||d.dow===6)
+    .map(d => {
+      const idx = days.indexOf(d);
+      return `<div class="gantt-weekend-col" style="left:${(idx/WIN_DAYS)*100}%;width:${(1/WIN_DAYS)*100}%"></div>`;
+    }).join('');
 
   const rows = items.map(c => {
     const s = parseDate(c.start);
     const e = c.end ? parseDate(c.end) : s;
     const color = DEPT_COLOR[c.dept] || '#6B7280';
 
-    const barS = Math.max(1, s <= mStart ? 1 : s.getDate());
-    const barE = Math.min(daysInMonth, e >= mEnd ? daysInMonth : e.getDate());
-    const leftPct  = ((barS - 1) / daysInMonth) * 100;
-    const widthPct = ((barE - barS + 1) / daysInMonth) * 100;
+    const startIdx = Math.max(0, Math.round((s - wStart) / 86400000));
+    const endIdx   = Math.min(WIN_DAYS - 1, Math.round((e - wStart) / 86400000));
+    const leftPct  = (startIdx / WIN_DAYS) * 100;
+    const widthPct = ((endIdx - startIdx + 1) / WIN_DAYS) * 100;
 
-    const sbClass = (s < mStart ? ' starts-before' : '') + (e > mEnd ? ' ends-after' : '');
+    const sbClass = (s < wStart ? ' starts-before' : '') + (e > wEnd ? ' ends-after' : '');
     const label   = widthPct > 12 ? c.name.trim() : '';
 
     const ddStr = getDdayStr(c);
-    const tooltip = `${c.name.trim()} (${c.start}~${c.end||'?'}) | ${c.dept||''} | ${c.headcount!=null?c.headcount+'명':''} | ${ddStr}`;
-
-    const weekendBg = days
-      .filter(d => d.dow===0||d.dow===6)
-      .map(d => `<div class="gantt-weekend-col" style="left:${((d.n-1)/daysInMonth)*100}%;width:${(1/daysInMonth)*100}%"></div>`)
-      .join('');
+    const tooltip = `${c.name.trim()} (${c.start}~${c.end||'?'}) | ${c.dept||''} | ${ddStr}`;
 
     return `
       <div class="gantt-row">
@@ -539,7 +541,7 @@ function renderTimeline() {
           <div class="gantt-bar${sbClass}"
             style="left:${leftPct}%;width:${widthPct}%;background:${color}"
             title="${esc(tooltip)}"
-            onclick="window.open('${c.url}','_blank')"
+            ${c.url ? `onclick="window.open('${c.url}','_blank')"` : ''}
           >${esc(label)}</div>
         </div>
       </div>`;
