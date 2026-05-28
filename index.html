@@ -259,9 +259,9 @@
     </div>
     <div class="roas-guide">
       <span style="color:var(--gray-400)">직접ROAS 기준</span>
-      <span style="color:#15803D;font-weight:600">● 200% 이상</span>
-      <span style="color:#B45309;font-weight:600">● 100~199%</span>
-      <span style="color:#DC2626;font-weight:600">● 100% 미만</span>
+      <span style="color:#15803D;font-weight:600">● 500% 이상</span>
+      <span style="color:#B45309;font-weight:600">● 200~499%</span>
+      <span style="color:#DC2626;font-weight:600">● 200% 미만</span>
     </div>
     <div id="perfGrid" class="perf-grid">
       <div class="loading"><div class="spinner"></div>성과 데이터 로딩 중...</div>
@@ -714,7 +714,7 @@ function renderPerfGrid() {
 
     const directRoas = Math.round(r.direct_roas || 0);
     const totalRoas  = Math.round(r.total_roas  || 0);
-    const roasCls = directRoas >= 200 ? 'roas-high' : directRoas >= 100 ? 'roas-mid' : 'roas-low';
+    const roasCls = directRoas >= 500 ? 'roas-high' : directRoas >= 200 ? 'roas-mid' : 'roas-low';
 
     // try to match with Notion data for dept color
     const notion = CAMPAIGNS.find(c => {
