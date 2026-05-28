@@ -105,12 +105,14 @@
     .metric-yd { font-size: 13px; font-weight: 700; }
     .metric-total { font-size: 10px; color: var(--gray-400); margin-top: 1px; }
     .perf-card { cursor: pointer; }
+    .perf-card.expanded { grid-column: 1 / -1; }
     .perf-card .perf-detail { display: none; margin-top: 12px; border-top: 1px solid var(--gray-100); padding-top: 12px; }
     .perf-card.expanded .perf-detail { display: block; }
     .perf-detail-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
-    .creator-table { width: 100%; border-collapse: collapse; font-size: 11px; }
-    .creator-table th { background: var(--gray-50); padding: 6px 8px; text-align: left; color: var(--gray-500); font-weight: 600; border-bottom: 1px solid var(--gray-200); white-space: nowrap; }
-    .creator-table td { padding: 6px 8px; border-bottom: 1px solid var(--gray-100); vertical-align: middle; }
+    .creator-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; }
+    .creator-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 500px; }
+    .creator-table th { background: var(--gray-50); padding: 7px 10px; text-align: left; color: var(--gray-500); font-weight: 600; border-bottom: 1px solid var(--gray-200); white-space: nowrap; }
+    .creator-table td { padding: 7px 10px; border-bottom: 1px solid var(--gray-100); vertical-align: middle; }
     .creator-table tr:last-child td { border-bottom: none; }
     .creator-table tr.zero-gmv td { color: var(--gray-400); }
     .creator-table td a { color: #5B4FE8; text-decoration: none; font-weight: 600; }
@@ -732,7 +734,7 @@ function renderPerfGrid() {
       </tr>`;
     };
     const creatorRows = creators.length
-      ? `<table class="creator-table">
+      ? `<div class="creator-table-wrap"><table class="creator-table">
           <thead><tr>
             <th>채널 · 콘텐츠</th><th>타입</th>
             <th style="text-align:right">직접GMV</th>
@@ -741,7 +743,7 @@ function renderPerfGrid() {
             <th style="text-align:right">섭외비</th>
           </tr></thead>
           <tbody>${creators.map(mkRow).join('')}</tbody>
-        </table>`
+        </table></div>`
       : '<div style="color:var(--gray-400);text-align:center;padding:12px;font-size:12px">크리에이터 데이터 없음</div>';
 
     return `
