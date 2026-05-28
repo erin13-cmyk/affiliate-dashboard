@@ -94,10 +94,12 @@
       flex-shrink: 0; margin-left: 8px;
       padding: 2px 8px; border-radius: 20px;
       font-size: 12px; font-weight: 700;
+      white-space: nowrap;
     }
     .roas-high { background: #DCFCE7; color: #15803D; }
     .roas-mid { background: #FEF3C7; color: #B45309; }
     .roas-low { background: #FEE2E2; color: #DC2626; }
+    .roas-guide { display:flex; gap:10px; font-size:11px; align-items:center; flex-wrap:wrap; margin-bottom:8px; }
     .perf-progress { height: 4px; background: var(--gray-100); border-radius: 2px; margin-bottom: 12px; overflow: hidden; }
     .perf-bar { height: 100%; border-radius: 2px; transition: width 0.4s; }
     .perf-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -254,6 +256,12 @@
     <div style="margin-bottom:10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;justify-content:space-between">
       <div id="perfFilterBar" style="display:flex;gap:6px;flex-wrap:wrap"></div>
       <button id="perfSortBtn" class="btn btn-secondary" style="font-size:12px;white-space:nowrap" onclick="togglePerfSort()">ROAS ↓</button>
+    </div>
+    <div class="roas-guide">
+      <span style="color:var(--gray-400)">직접ROAS 기준</span>
+      <span style="color:#15803D;font-weight:600">● 200% 이상</span>
+      <span style="color:#B45309;font-weight:600">● 100~199%</span>
+      <span style="color:#DC2626;font-weight:600">● 100% 미만</span>
     </div>
     <div id="perfGrid" class="perf-grid">
       <div class="loading"><div class="spinner"></div>성과 데이터 로딩 중...</div>
@@ -704,8 +712,8 @@ function renderPerfGrid() {
     const elapsedDays = s ? Math.min(Math.ceil((today-s)/(864e5))+1, totalDays||999) : 0;
     const pct = totalDays ? Math.round((elapsedDays/totalDays)*100) : 0;
 
-    const directRoas = r.direct_roas || 0;
-    const totalRoas  = r.total_roas  || 0;
+    const directRoas = Math.round(r.direct_roas || 0);
+    const totalRoas  = Math.round(r.total_roas  || 0);
     const roasCls = directRoas >= 200 ? 'roas-high' : directRoas >= 100 ? 'roas-mid' : 'roas-low';
 
     // try to match with Notion data for dept color
@@ -757,8 +765,8 @@ function renderPerfGrid() {
             <div class="perf-period">${period} · ${elapsedDays}/${totalDays||'?'}일차</div>
           </div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
-            <span class="perf-roas ${roasCls}">직접 ${directRoas}%</span>
-            <span class="perf-roas" style="font-size:11px;opacity:0.75">전체 ${totalRoas}%</span>
+            <span class="perf-roas ${roasCls}">직접 ROAS ${directRoas}%</span>
+            <span class="perf-roas" style="font-size:11px;opacity:0.75">전체 ROAS ${totalRoas}%</span>
           </div>
         </div>
         <div class="perf-progress">
@@ -897,10 +905,7 @@ function statusBadge(c) {
 
 function fmt(n) { return Number(n||0).toLocaleString('ko-KR'); }
 function fmtK(n) {
-  n = Number(n||0);
-  if (n >= 1e8) return (n/1e8).toFixed(1)+'억';
-  if (n >= 1e4) return Math.round(n/1e4)+'만';
-  return n.toLocaleString('ko-KR');
+  return Number(n||0).toLocaleString('ko-KR');
 }
 function fmtBudget(n) {
   n = Number(n||0);
