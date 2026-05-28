@@ -85,6 +85,7 @@
       box-shadow: var(--shadow);
       padding: 16px;
       border-left: 4px solid var(--primary);
+      overflow: hidden;
     }
     .perf-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
     .perf-name { font-size: 13px; font-weight: 700; line-height: 1.4; }
@@ -109,8 +110,8 @@
     .perf-card .perf-detail { display: none; margin-top: 12px; border-top: 1px solid var(--gray-100); padding-top: 12px; }
     .perf-card.expanded .perf-detail { display: block; }
     .perf-detail-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
-    .creator-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; }
-    .creator-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 500px; }
+    .creator-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .creator-table { width: 100%; border-collapse: collapse; font-size: 12px; }
     .creator-table th { background: var(--gray-50); padding: 7px 10px; text-align: left; color: var(--gray-500); font-weight: 600; border-bottom: 1px solid var(--gray-200); white-space: nowrap; }
     .creator-table td { padding: 7px 10px; border-bottom: 1px solid var(--gray-100); vertical-align: middle; }
     .creator-table tr:last-child td { border-bottom: none; }
@@ -726,7 +727,6 @@ function renderPerfGrid() {
       const ct = c.content_url ? ` <a href="${esc(c.content_url)}" target="_blank" class="content-link" title="콘텐츠 보기">📄</a>` : '';
       return `<tr>
         <td><div class="creator-channel">${ch}${ct}</div></td>
-        <td style="color:var(--gray-400)">${c.channel_type||'-'}</td>
         <td style="text-align:right;font-weight:600">${c.direct_gmv>0?fmtK(c.direct_gmv):'<span style="color:var(--gray-300)">-</span>'}</td>
         <td style="text-align:right">${c.total_gmv>0?fmtK(c.total_gmv):'<span style="color:var(--gray-300)">-</span>'}</td>
         <td style="text-align:right">${c.orders>0?fmt(c.orders)+'건':'<span style="color:var(--gray-300)">-</span>'}</td>
@@ -736,7 +736,7 @@ function renderPerfGrid() {
     const creatorRows = creators.length
       ? `<div class="creator-table-wrap"><table class="creator-table">
           <thead><tr>
-            <th>채널 · 콘텐츠</th><th>타입</th>
+            <th>채널 · 콘텐츠</th>
             <th style="text-align:right">직접GMV</th>
             <th style="text-align:right">전체GMV</th>
             <th style="text-align:right">주문</th>
